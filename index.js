@@ -91,16 +91,15 @@ app.get('/gemini', async (req, res) => {
     ];
 
     // Appeler l'API Gemini
-    const response = await model.generateContentStream({
+    const result = await model.generateContentStream({
       contents,
     });
 
     // Collecter la réponse complète
     let fullResponse = '';
-    for await (const chunk of response) {
-      if (chunk.text) {
-        fullResponse += chunk.text;
-      }
+    for await (const chunk of result.stream) {
+      const chunkText = chunk.text();
+      fullResponse += chunkText;
     }
 
     // Mettre à jour l'historique de conversation
