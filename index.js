@@ -66,14 +66,7 @@ app.get('/gemini', async (req, res) => {
 
     // Initialiser le client Gemini AI
     const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-    const config = {
-      thinkingConfig: {
-        thinkingBudget: -1,
-      },
-    };
-
-    const model = 'gemini-2.5-pro';
+    const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
     // Construire les parts du message
     const parts = [];
@@ -98,9 +91,7 @@ app.get('/gemini', async (req, res) => {
     ];
 
     // Appeler l'API Gemini
-    const response = await ai.models.generateContentStream({
-      model,
-      config,
+    const response = await model.generateContentStream({
       contents,
     });
 
