@@ -66,7 +66,10 @@ app.get('/gemini', async (req, res) => {
 
     // Initialiser le client Gemini AI
     const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const model = ai.getGenerativeModel({ 
+      model: 'gemini-2.0-flash-exp',
+      systemInstruction: "Toujours répondre en texte formaté avec markdown. Utiliser **texte** pour mettre en gras les éléments importants, même lors de l'analyse d'images. Éviter de répondre uniquement en JSON brut sauf si explicitement demandé."
+    });
 
     // Construire les parts du message
     const parts = [];
