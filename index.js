@@ -102,6 +102,9 @@ app.get('/gemini', async (req, res) => {
       fullResponse += chunkText;
     }
 
+    // Formatter le texte pour mettre en gras les textes importants
+    // Les textes entre **texte** seront conservés tels quels (déjà en gras en Markdown)
+    
     // Mettre à jour l'historique de conversation
     memory.history.push({
       role: 'user',
