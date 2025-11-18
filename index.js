@@ -321,7 +321,7 @@ app.get('/', (req, res) => {
         </div>
         
         <div class="footer">
-            <p>🚀 Propulsé par Google Gemini 2.0 Flash Experimental</p>
+            <p>🚀 Propulsé par Google Gemini 1.5 Flash</p>
             <p style="margin-top: 10px; opacity: 0.7;">Hébergé sur Replit</p>
         </div>
     </div>
@@ -387,7 +387,7 @@ app.get('/gemini', async (req, res) => {
     // Initialiser le client Gemini AI
     const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = ai.getGenerativeModel({ 
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-1.5-flash',
       systemInstruction: "Toujours répondre en texte formaté avec markdown. IMPORTANT: Utiliser **texte** pour mettre en gras TOUS les termes importants, titres, étapes numérotées, résultats, et mots-clés, que ce soit pour du texte pur ou lors de l'analyse d'images. Mettre en gras au moins 3-5 éléments par réponse. Éviter de répondre uniquement en JSON brut sauf si explicitement demandé."
     });
 
