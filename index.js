@@ -229,9 +229,9 @@ app.get('/', (req, res) => {
                                 <span>Votre question ou prompt</span>
                             </li>
                             <li>
-                                <span class="param-name">imagurl</span>
+                                <span class="param-name">imagurl, imagurl1, imagurl2, ...</span>
                                 <span class="badge badge-optional">OPTIONNEL</span>
-                                <span>URL de l'image à analyser</span>
+                                <span>URLs des images à analyser (plusieurs images possibles)</span>
                             </li>
                         </ul>
                     </div>
@@ -546,15 +546,27 @@ app.get('/open', async (req, res) => {
       text: route
     });
 
-    // Ajouter l'image si fournie
+    // Collecter toutes les images (imagurl, imagurl1, imagurl2, etc.)
+    const imageUrls = [];
     if (imagurl) {
+      imageUrls.push(imagurl);
+    }
+    
+    let imageIndex = 1;
+    while (req.query[`imagurl${imageIndex}`]) {
+      imageUrls.push(req.query[`imagurl${imageIndex}`]);
+      imageIndex++;
+    }
+
+    // Ajouter toutes les images trouvées
+    imageUrls.forEach(imgUrl => {
       userContent.push({
         type: 'image_url',
         image_url: {
-          url: imagurl
+          url: imgUrl
         }
       });
-    }
+    });
 
     // Construire les messages avec l'historique
     const messages = [
@@ -620,7 +632,7 @@ app.get('/open', async (req, res) => {
       success: true,
       uid: uid,
       prompt: route,
-      hasImage: !!imagurl,
+      imagesCount: imageUrls.length,
       response: formattedResponse
     });
 
