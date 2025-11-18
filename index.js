@@ -1,7 +1,7 @@
 
 import 'dotenv/config';
 import express from 'express';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import axios from 'axios';
 
 const app = express();
@@ -203,7 +203,7 @@ app.get('/', (req, res) => {
 <body>
     <div class="container">
         <div class="header">
-            <h1>🤖 API Gemini 2.0 Flash</h1>
+            <h1>🤖 API Gemini 2.5 Flash</h1>
             <p>API puissante pour converser avec l'IA et analyser des images</p>
         </div>
         
@@ -321,7 +321,7 @@ app.get('/', (req, res) => {
         </div>
         
         <div class="footer">
-            <p>🚀 Propulsé par Google Gemini 1.5 Flash</p>
+            <p>🚀 Propulsé par Google Gemini 2.5 Flash</p>
             <p style="margin-top: 10px; opacity: 0.7;">Hébergé sur Replit</p>
         </div>
     </div>
@@ -385,11 +385,7 @@ app.get('/gemini', async (req, res) => {
     }
 
     // Initialiser le client Gemini AI
-    const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = ai.getGenerativeModel({ 
-      model: 'gemini-1.5-flash',
-      systemInstruction: "Toujours répondre en texte formaté avec markdown. IMPORTANT: Utiliser **texte** pour mettre en gras TOUS les termes importants, titres, étapes numérotées, résultats, et mots-clés, que ce soit pour du texte pur ou lors de l'analyse d'images. Mettre en gras au moins 3-5 éléments par réponse. Éviter de répondre uniquement en JSON brut sauf si explicitement demandé."
-    });
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
     // Construire les parts du message
     const parts = [];
@@ -413,17 +409,14 @@ app.get('/gemini', async (req, res) => {
       }
     ];
 
-    // Appeler l'API Gemini
-    const result = await model.generateContentStream({
-      contents,
+    // Appeler l'API Gemini avec la nouvelle syntaxe
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: contents,
+      config: {
+        systemInstruction: "Toujours répondre en texte formaté avec markdown. IMPORTANT: Utiliser **texte** pour mettre en gras TOUS les termes importants, titres, étapes numérotées, résultats, et mots-clés, que ce soit pour du texte pur ou lors de l'analyse d'images. Mettre en gras au moins 3-5 éléments par réponse. Éviter de répondre uniquement en JSON brut sauf si explicitement demandé."
+      }
     });
-
-    // Collecter la réponse complète
-    let fullResponse = '';
-    for await (const chunk of result.stream) {
-      const chunkText = chunk.text();
-      fullResponse += chunkText;
-    }
 
     // Fonction pour convertir du texte en Unicode gras
     function toBoldUnicode(text) {
@@ -440,9 +433,9 @@ app.get('/gemini', async (req, res) => {
       return text.split('').map(char => boldMap[char] || char).join('');
     }
 
-    // Formatter le texte pour mettre en gras les textes importants
+    // Récupérer et formatter la réponse complète
     // Convertir les textes entre **texte** en caractères Unicode gras
-    fullResponse = fullResponse.replace(/\*\*(.+?)\*\*/g, (match, text) => {
+    const fullResponse = response.text.replace(/\*\*(.+?)\*\*/g, (match, text) => {
       return toBoldUnicode(text);
     });
     
