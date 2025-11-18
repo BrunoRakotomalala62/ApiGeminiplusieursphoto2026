@@ -409,14 +409,26 @@ app.get('/gemini', async (req, res) => {
       }
     ];
 
-    // Appeler l'API Gemini avec la nouvelle syntaxe
-    const response = await ai.models.generateContent({
+    // Configuration pour Gemini avec thinking budget
+    const config = {
+      systemInstruction: "Toujours répondre en texte formaté avec markdown. IMPORTANT: Utiliser **texte** pour mettre en gras TOUS les termes importants, titres, étapes numérotées, résultats, et mots-clés, que ce soit pour du texte pur ou lors de l'analyse d'images. Mettre en gras au moins 3-5 éléments par réponse. Éviter de répondre uniquement en JSON brut sauf si explicitement demandé.",
+      thinkingConfig: {
+        thinkingBudget: -1
+      }
+    };
+
+    // Appeler l'API Gemini avec streaming
+    const response = await ai.models.generateContentStream({
       model: 'gemini-2.5-flash',
       contents: contents,
-      config: {
-        systemInstruction: "Toujours répondre en texte formaté avec markdown. IMPORTANT: Utiliser **texte** pour mettre en gras TOUS les termes importants, titres, étapes numérotées, résultats, et mots-clés, que ce soit pour du texte pur ou lors de l'analyse d'images. Mettre en gras au moins 3-5 éléments par réponse. Éviter de répondre uniquement en JSON brut sauf si explicitement demandé."
-      }
+      config: config
     });
+
+    // Collecter la réponse complète depuis le stream
+    let fullResponseText = '';
+    for await (const chunk of response) {
+      fullResponseText += chunk.text;
+    }
 
     // Fonction pour convertir du texte en Unicode gras
     function toBoldUnicode(text) {
@@ -433,9 +445,9 @@ app.get('/gemini', async (req, res) => {
       return text.split('').map(char => boldMap[char] || char).join('');
     }
 
-    // Récupérer et formatter la réponse complète
+    // Formatter la réponse complète
     // Convertir les textes entre **texte** en caractères Unicode gras
-    const fullResponse = response.text.replace(/\*\*(.+?)\*\*/g, (match, text) => {
+    const fullResponse = fullResponseText.replace(/\*\*(.+?)\*\*/g, (match, text) => {
       return toBoldUnicode(text);
     });
     
