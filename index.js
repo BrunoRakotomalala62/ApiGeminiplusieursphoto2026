@@ -229,7 +229,7 @@ app.get('/', (req, res) => {
                                 <span>Votre question ou prompt</span>
                             </li>
                             <li>
-                                <span class="param-name">imageurl</span>
+                                <span class="param-name">imagurl</span>
                                 <span class="badge badge-optional">OPTIONNEL</span>
                                 <span>URL de l'image à analyser</span>
                             </li>
@@ -518,7 +518,7 @@ app.get('/gemini', async (req, res) => {
 // Route GET /open - OpenRouter API
 app.get('/open', async (req, res) => {
   try {
-    const { route, imageurl, uid } = req.query;
+    const { route, imagurl, uid } = req.query;
     
     if (!uid) {
       return res.status(400).json({ error: 'UID is required' });
@@ -547,11 +547,11 @@ app.get('/open', async (req, res) => {
     });
 
     // Ajouter l'image si fournie
-    if (imageurl) {
+    if (imagurl) {
       userContent.push({
         type: 'image_url',
         image_url: {
-          url: imageurl
+          url: imagurl
         }
       });
     }
@@ -620,7 +620,7 @@ app.get('/open', async (req, res) => {
       success: true,
       uid: uid,
       prompt: route,
-      hasImage: !!imageurl,
+      hasImage: !!imagurl,
       response: formattedResponse
     });
 
