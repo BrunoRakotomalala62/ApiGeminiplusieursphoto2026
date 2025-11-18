@@ -203,13 +203,43 @@ app.get('/', (req, res) => {
 <body>
     <div class="container">
         <div class="header">
-            <h1>🤖 API Gemini 2.5 Flash</h1>
-            <p>API puissante pour converser avec l'IA et analyser des images</p>
+            <h1>🤖 API IA Multi-Modèle</h1>
+            <p>API puissante pour converser avec l'IA et analyser des images (Gemini & OpenRouter)</p>
         </div>
         
         <div class="content">
             <div class="section animated">
                 <h2>📚 Endpoints Disponibles</h2>
+                
+                <div class="endpoint" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h3>⭐ GET /open</h3>
+                    <p>Utiliser OpenRouter AI avec conversation continue (RECOMMANDÉ - Quotas plus généreux)</p>
+                    
+                    <div class="params">
+                        <h4 style="margin-bottom: 10px;">Paramètres:</h4>
+                        <ul class="params-list">
+                            <li>
+                                <span class="param-name">uid</span>
+                                <span class="badge badge-required">REQUIS</span>
+                                <span>Identifiant unique de l'utilisateur</span>
+                            </li>
+                            <li>
+                                <span class="param-name">route</span>
+                                <span class="badge badge-required">REQUIS</span>
+                                <span>Votre question ou prompt</span>
+                            </li>
+                            <li>
+                                <span class="param-name">imageurl</span>
+                                <span class="badge badge-optional">OPTIONNEL</span>
+                                <span>URL de l'image à analyser</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <p><strong>Exemples cliquables:</strong></p>
+                    <a href="/open?uid=demo123&route=Bonjour, comment ça va?" target="_blank" class="example-btn">💬 Message simple</a>
+                    <a href="/open?uid=demo123&route=Raconte-moi une histoire" target="_blank" class="example-btn">📖 Demander une histoire</a>
+                </div>
                 
                 <div class="endpoint">
                     <h3>🔵 GET /gemini</h3>
@@ -321,7 +351,7 @@ app.get('/', (req, res) => {
         </div>
         
         <div class="footer">
-            <p>🚀 Propulsé par Google Gemini 2.5 Flash</p>
+            <p>🚀 Propulsé par OpenRouter & Google Gemini 2.5 Flash</p>
             <p style="margin-top: 10px; opacity: 0.7;">Hébergé sur Replit</p>
         </div>
     </div>
@@ -481,6 +511,124 @@ app.get('/gemini', async (req, res) => {
     res.status(500).json({
       error: 'Internal server error',
       message: error.message
+    });
+  }
+});
+
+// Route GET /open - OpenRouter API
+app.get('/open', async (req, res) => {
+  try {
+    const { route, imageurl, uid } = req.query;
+    
+    if (!uid) {
+      return res.status(400).json({ error: 'UID is required' });
+    }
+
+    if (!route) {
+      return res.status(400).json({ error: 'route (prompt) is required' });
+    }
+
+    // Initialiser la mémoire de l'utilisateur si elle n'existe pas
+    if (!userMemory.has(uid)) {
+      userMemory.set(uid, {
+        history: []
+      });
+    }
+
+    const memory = userMemory.get(uid);
+
+    // Construire le message utilisateur
+    const userContent = [];
+    
+    // Ajouter le texte
+    userContent.push({
+      type: 'text',
+      text: route
+    });
+
+    // Ajouter l'image si fournie
+    if (imageurl) {
+      userContent.push({
+        type: 'image_url',
+        image_url: {
+          url: imageurl
+        }
+      });
+    }
+
+    // Construire les messages avec l'historique
+    const messages = [
+      ...memory.history,
+      {
+        role: 'user',
+        content: userContent
+      }
+    ];
+
+    // Appeler l'API OpenRouter
+    const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+      model: 'openrouter/sherlock-dash-alpha',
+      messages: messages
+    }, {
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'HTTP-Referer': process.env.REPLIT_DOMAINS || 'https://replit.com',
+        'X-Title': 'API Gemini OpenRouter',
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const assistantMessage = response.data.choices[0].message.content;
+
+    // Fonction pour convertir du texte en Unicode gras
+    function toBoldUnicode(text) {
+      const boldMap = {
+        'A': '𝗔', 'B': '𝗕', 'C': '𝗖', 'D': '𝗗', 'E': '𝗘', 'F': '𝗙', 'G': '𝗚', 'H': '𝗛', 'I': '𝗜', 'J': '𝗝',
+        'K': '𝗞', 'L': '𝗟', 'M': '𝗠', 'N': '𝗡', 'O': '𝗢', 'P': '𝗣', 'Q': '𝗤', 'R': '𝗥', 'S': '𝗦', 'T': '𝗧',
+        'U': '𝗨', 'V': '𝗩', 'W': '𝗪', 'X': '𝗫', 'Y': '𝗬', 'Z': '𝗭',
+        'a': '𝗮', 'b': '𝗯', 'c': '𝗰', 'd': '𝗱', 'e': '𝗲', 'f': '𝗳', 'g': '𝗴', 'h': '𝗵', 'i': '𝗶', 'j': '𝗷',
+        'k': '𝗸', 'l': '𝗹', 'm': '𝗺', 'n': '𝗻', 'o': '𝗼', 'p': '𝗽', 'q': '𝗾', 'r': '𝗿', 's': '𝘀', 't': '𝘁',
+        'u': '𝘂', 'v': '𝘃', 'w': '𝘄', 'x': '𝘅', 'y': '𝘆', 'z': '𝘇',
+        '0': '𝟬', '1': '𝟭', '2': '𝟮', '3': '𝟯', '4': '𝟰', '5': '𝟱', '6': '𝟲', '7': '𝟳', '8': '𝟴', '9': '𝟵'
+      };
+      
+      return text.split('').map(char => boldMap[char] || char).join('');
+    }
+
+    // Formatter la réponse
+    const formattedResponse = assistantMessage.replace(/\*\*(.+?)\*\*/g, (match, text) => {
+      return toBoldUnicode(text);
+    });
+
+    // Mettre à jour l'historique de conversation
+    memory.history.push({
+      role: 'user',
+      content: route
+    });
+    memory.history.push({
+      role: 'assistant',
+      content: formattedResponse
+    });
+
+    // Limiter l'historique à 20 derniers messages
+    if (memory.history.length > 20) {
+      memory.history = memory.history.slice(-20);
+    }
+
+    // Retourner la réponse
+    res.json({
+      success: true,
+      uid: uid,
+      prompt: route,
+      hasImage: !!imageurl,
+      response: formattedResponse
+    });
+
+  } catch (error) {
+    console.error('Error processing OpenRouter request:', error.response?.data || error.message);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: error.response?.data?.error?.message || error.message
     });
   }
 });
