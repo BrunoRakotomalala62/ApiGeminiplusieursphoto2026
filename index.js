@@ -272,6 +272,35 @@ app.get('/', (req, res) => {
                     <a href="/gemini?uid=demo123&pro=Explique-moi la relativité" target="_blank" class="example-btn">🔬 Question scientifique</a>
                 </div>
                 
+                <div class="endpoint" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <h3>🎨 GET /nano</h3>
+                    <p>Générer ou modifier des images avec IA</p>
+                    
+                    <div class="params">
+                        <h4 style="margin-bottom: 10px;">Paramètres:</h4>
+                        <ul class="params-list">
+                            <li>
+                                <span class="param-name">uid</span>
+                                <span class="badge badge-required">REQUIS</span>
+                                <span>Identifiant unique de l'utilisateur</span>
+                            </li>
+                            <li>
+                                <span class="param-name">banana</span>
+                                <span class="badge badge-required">REQUIS</span>
+                                <span>Description de l'image à générer ou modification</span>
+                            </li>
+                            <li>
+                                <span class="param-name">imagurl</span>
+                                <span class="badge badge-optional">OPTIONNEL</span>
+                                <span>URL de l'image à modifier (si modification)</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <p><strong>Exemples cliquables:</strong></p>
+                    <a href="/nano?uid=demo123&banana=Un chat astronaute dans l'espace" target="_blank" class="example-btn">🚀 Générer une image</a>
+                </div>
+                
                 <div class="endpoint" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
                     <h3>🟢 GET /status</h3>
                     <p>Vérifier l'état de la mémoire d'un utilisateur</p>
@@ -345,6 +374,10 @@ app.get('/', (req, res) => {
                     <div style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); padding: 20px; border-radius: 10px;">
                         <h3 style="margin-bottom: 10px;">🎨 Formatage avancé</h3>
                         <p>Réponses formatées en Unicode gras automatiquement</p>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); padding: 20px; border-radius: 10px;">
+                        <h3 style="margin-bottom: 10px;">🖼️ Génération d'images</h3>
+                        <p>Créez et modifiez des images avec l'IA</p>
                     </div>
                 </div>
             </div>
@@ -638,6 +671,98 @@ app.get('/open', async (req, res) => {
 
   } catch (error) {
     console.error('Error processing OpenRouter request:', error.response?.data || error.message);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: error.response?.data?.error?.message || error.message
+    });
+  }
+});
+
+// Route GET /nano - Génération et modification d'images
+app.get('/nano', async (req, res) => {
+  try {
+    const { banana, imagurl, uid } = req.query;
+    
+    if (!uid) {
+      return res.status(400).json({ error: 'UID is required' });
+    }
+
+    if (!banana) {
+      return res.status(400).json({ error: 'banana (prompt) is required' });
+    }
+
+    // Construire le message utilisateur
+    const userContent = [];
+    
+    // Ajouter le texte
+    userContent.push({
+      type: 'text',
+      text: banana
+    });
+
+    // Ajouter l'image si fournie (pour modification)
+    if (imagurl) {
+      userContent.push({
+        type: 'image_url',
+        image_url: {
+          url: imagurl
+        }
+      });
+    }
+
+    // Construire les messages
+    const messages = [
+      {
+        role: 'user',
+        content: userContent
+      }
+    ];
+
+    // Appeler l'API OpenRouter avec le modèle de génération d'image
+    const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+      model: 'google/gemini-2.5-flash-image',
+      messages: messages
+    }, {
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'HTTP-Referer': process.env.REPLIT_DOMAINS || 'https://replit.com',
+        'X-Title': 'API Gemini Image Generator',
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const assistantMessage = response.data.choices[0].message;
+    
+    // Extraire l'URL de l'image générée
+    let imageUrl = null;
+    
+    // Vérifier si la réponse contient une image
+    if (assistantMessage.content && Array.isArray(assistantMessage.content)) {
+      // Chercher l'objet image_url dans le contenu
+      const imageContent = assistantMessage.content.find(item => item.type === 'image_url');
+      if (imageContent && imageContent.image_url && imageContent.image_url.url) {
+        imageUrl = imageContent.image_url.url;
+      }
+    } else if (typeof assistantMessage.content === 'string') {
+      // Si c'est une chaîne, essayer d'extraire l'URL
+      const urlMatch = assistantMessage.content.match(/(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp))/i);
+      if (urlMatch) {
+        imageUrl = urlMatch[0];
+      }
+    }
+
+    // Retourner la réponse
+    res.json({
+      success: true,
+      uid: uid,
+      prompt: banana,
+      hasInputImage: !!imagurl,
+      imageUrl: imageUrl,
+      rawResponse: assistantMessage.content
+    });
+
+  } catch (error) {
+    console.error('Error processing image generation request:', error.response?.data || error.message);
     res.status(500).json({
       error: 'Internal server error',
       message: error.response?.data?.error?.message || error.message
