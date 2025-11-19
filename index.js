@@ -772,15 +772,15 @@ app.get('/nano', async (req, res) => {
       }
     ];
 
-    // Appeler l'API OpenRouter avec le modèle de génération d'image
-    const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-      model: 'google/gemini-2.5-flash-image',
+    // Appeler l'API LaoZhang avec le modèle de génération d'image
+    const response = await axios.post('https://api.laozhang.ai/v1/chat/completions', {
+      model: 'gemini-2.5-flash-image',
       messages: messages,
       max_tokens: 6676,
       modalities: ["image", "text"]
     }, {
       headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'Authorization': `Bearer ${process.env.LAOZHANG_API_KEY}`,
         'HTTP-Referer': process.env.REPLIT_DOMAINS || 'https://replit.com',
         'X-Title': 'API Gemini Image Generator',
         'Content-Type': 'application/json'
