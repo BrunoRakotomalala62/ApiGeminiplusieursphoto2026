@@ -27,21 +27,17 @@ args = "gemini-api-server"
 name = "gemini-api-server"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm start"
 waitForPort = 5000
 
-[workflows.workflow.metadata]
-outputType = "webview"
-
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 35677
-externalPort = 3002
 
 [[ports]]
 localPort = 35815
