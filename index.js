@@ -722,7 +722,8 @@ app.get('/nano', async (req, res) => {
     const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
       model: 'google/gemini-2.5-flash-image',
       messages: messages,
-      max_tokens: 6676
+      max_tokens: 6676,
+      modalities: ["image", "text"]
     }, {
       headers: {
         'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
@@ -734,22 +735,14 @@ app.get('/nano', async (req, res) => {
 
     const assistantMessage = response.data.choices[0].message;
     
-    // Extraire l'URL de l'image générée
+    // Extraire l'image générée (base64 data URL)
     let imageUrl = null;
+    let imageBase64 = null;
     
-    // Vérifier si la réponse contient une image
-    if (assistantMessage.content && Array.isArray(assistantMessage.content)) {
-      // Chercher l'objet image_url dans le contenu
-      const imageContent = assistantMessage.content.find(item => item.type === 'image_url');
-      if (imageContent && imageContent.image_url && imageContent.image_url.url) {
-        imageUrl = imageContent.image_url.url;
-      }
-    } else if (typeof assistantMessage.content === 'string') {
-      // Si c'est une chaîne, essayer d'extraire l'URL
-      const urlMatch = assistantMessage.content.match(/(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp))/i);
-      if (urlMatch) {
-        imageUrl = urlMatch[0];
-      }
+    // Les images sont dans le champ 'images' de la réponse
+    if (assistantMessage.images && assistantMessage.images.length > 0) {
+      imageBase64 = assistantMessage.images[0];
+      imageUrl = imageBase64;
     }
 
     // Retourner la réponse
@@ -759,7 +752,8 @@ app.get('/nano', async (req, res) => {
       prompt: banana,
       hasInputImage: !!imagurl,
       imageUrl: imageUrl,
-      rawResponse: assistantMessage.content
+      imageBase64: imageBase64,
+      textResponse: assistantMessage.content
     });
 
   } catch (error) {
