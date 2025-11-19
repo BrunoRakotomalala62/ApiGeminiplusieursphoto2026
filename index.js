@@ -849,18 +849,19 @@ app.get('/claude', async (req, res) => {
       const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
       const base64Image = Buffer.from(imageResponse.data, 'binary').toString('base64');
       const contentType = imageResponse.headers['content-type'] || 'image/jpeg';
-      const imageDataUrl = `data:${contentType};base64,${base64Image}`;
       
-      // Si une image est fournie, utiliser le format multi-modal avec base64
+      // Format Anthropic (Claude) pour les images
       userContent = [
         {
           type: 'text',
           text: prompt
         },
         {
-          type: 'image_url',
-          image_url: {
-            url: imageDataUrl
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: contentType,
+            data: base64Image
           }
         }
       ];
