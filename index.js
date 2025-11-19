@@ -721,7 +721,8 @@ app.get('/nano', async (req, res) => {
     // Appeler l'API OpenRouter avec le modèle de génération d'image
     const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
       model: 'google/gemini-2.5-flash-image',
-      messages: messages
+      messages: messages,
+      max_tokens: 6676
     }, {
       headers: {
         'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
