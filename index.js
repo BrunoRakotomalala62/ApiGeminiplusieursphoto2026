@@ -331,6 +331,36 @@ app.get('/', (req, res) => {
                     <a href="/claude?uid=demo123&prompt=Décris cette image en détail&imageUrl=https://picsum.photos/400/300" target="_blank" class="example-btn">🖼️ Analyser une image</a>
                 </div>
                 
+                <div class="endpoint" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);">
+                    <h3>🚀 GET /grok4</h3>
+                    <p>Grok 4.1 Fast d'Openrouter - Modèle ultra rapide avec analyse d'images (NOUVEAU)</p>
+                    
+                    <div class="params">
+                        <h4 style="margin-bottom: 10px;">Paramètres:</h4>
+                        <ul class="params-list">
+                            <li>
+                                <span class="param-name">uid</span>
+                                <span class="badge badge-required">REQUIS</span>
+                                <span>Identifiant unique de l'utilisateur</span>
+                            </li>
+                            <li>
+                                <span class="param-name">prompt</span>
+                                <span class="badge badge-required">REQUIS</span>
+                                <span>Votre question ou message</span>
+                            </li>
+                            <li>
+                                <span class="param-name">imageurl</span>
+                                <span class="badge badge-optional">OPTIONNEL</span>
+                                <span>URL de l'image à analyser</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <p><strong>Exemples cliquables:</strong></p>
+                    <a href="/grok4?uid=123&prompt=Bonjour comment ça va ?" target="_blank" class="example-btn">💬 Message texte</a>
+                    <a href="/grok4?uid=123&prompt=Décris cette image en détail&imageurl=https://upload.wikimedia.org/wikipedia/commons/1/15/Cat_August_2010-4.jpg" target="_blank" class="example-btn">🖼️ Analyser une image</a>
+                </div>
+                
                 <div class="endpoint" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
                     <h3>🔵 GET /laozhang</h3>
                     <p>Claude Sonnet 4 texte uniquement (sans images)</p>
@@ -1038,6 +1068,148 @@ app.get('/laozhang', async (req, res) => {
 
   } catch (error) {
     console.error('Error processing LaoZhang request:', error.response?.data || error.message);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: error.response?.data?.error?.message || error.message,
+      details: error.response?.data
+    });
+  }
+});
+
+// Route GET /grok4 - Utiliser le modèle Grok 4.1 Fast d'Openrouter
+app.get('/grok4', async (req, res) => {
+  try {
+    const { prompt, uid, imageurl } = req.query;
+    
+    if (!uid) {
+      return res.status(400).json({ error: 'UID is required' });
+    }
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    // Initialiser la mémoire de l'utilisateur si elle n'existe pas
+    if (!userMemory.has(uid)) {
+      userMemory.set(uid, {
+        images: [],
+        history: []
+      });
+    }
+
+    const memory = userMemory.get(uid);
+
+    // Construire les messages
+    let messages = [
+      ...memory.history
+    ];
+
+    // Si une image est fournie
+    if (imageurl) {
+      messages.push({
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: prompt
+          },
+          {
+            type: 'image_url',
+            image_url: {
+              url: imageurl
+            }
+          }
+        ]
+      });
+    } else {
+      // Texte seulement
+      messages.push({
+        role: 'user',
+        content: prompt
+      });
+    }
+
+    // Appeler l'API Openrouter
+    const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+      model: 'x-ai/grok-4.1-fast',
+      messages: messages
+    }, {
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://replit.com',
+        'X-Title': 'Gemini API Server'
+      }
+    });
+
+    const assistantMessage = response.data.choices[0].message.content;
+
+    // Fonction pour convertir du texte en Unicode gras
+    function toBoldUnicode(text) {
+      const boldMap = {
+        'A': '𝗔', 'B': '𝗕', 'C': '𝗖', 'D': '𝗗', 'E': '𝗘', 'F': '𝗙', 'G': '𝗚', 'H': '𝗛', 'I': '𝗜', 'J': '𝗝',
+        'K': '𝗞', 'L': '𝗟', 'M': '𝗠', 'N': '𝗡', 'O': '𝗢', 'P': '𝗣', 'Q': '𝗤', 'R': '𝗥', 'S': '𝗦', 'T': '𝗧',
+        'U': '𝗨', 'V': '𝗩', 'W': '𝗪', 'X': '𝗫', 'Y': '𝗬', 'Z': '𝗭',
+        'a': '𝗮', 'b': '𝗯', 'c': '𝗰', 'd': '𝗱', 'e': '𝗲', 'f': '𝗳', 'g': '𝗴', 'h': '𝗵', 'i': '𝗶', 'j': '𝗷',
+        'k': '𝗸', 'l': '𝗹', 'm': '𝗺', 'n': '𝗻', 'o': '𝗼', 'p': '𝗽', 'q': '𝗾', 'r': '𝗿', 's': '𝘀', 't': '𝘁',
+        'u': '𝘂', 'v': '𝘃', 'w': '𝘄', 'x': '𝘅', 'y': '𝘆', 'z': '𝘇',
+        '0': '𝟬', '1': '𝟭', '2': '𝟮', '3': '𝟯', '4': '𝟰', '5': '𝟱', '6': '𝟲', '7': '𝟳', '8': '𝟴', '9': '𝟵'
+      };
+      
+      return text.split('').map(char => boldMap[char] || char).join('');
+    }
+
+    // Formatter la réponse
+    const formattedResponse = assistantMessage.replace(/\*\*(.+?)\*\*/g, (match, text) => {
+      return toBoldUnicode(text);
+    });
+
+    // Mettre à jour l'historique de conversation
+    if (imageurl) {
+      memory.history.push({
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: prompt
+          },
+          {
+            type: 'image_url',
+            image_url: {
+              url: imageurl
+            }
+          }
+        ]
+      });
+    } else {
+      memory.history.push({
+        role: 'user',
+        content: prompt
+      });
+    }
+    
+    memory.history.push({
+      role: 'assistant',
+      content: formattedResponse
+    });
+
+    // Limiter l'historique à 20 derniers messages
+    if (memory.history.length > 20) {
+      memory.history = memory.history.slice(-20);
+    }
+
+    // Retourner la réponse
+    res.json({
+      success: true,
+      uid: uid,
+      model: 'x-ai/grok-4.1-fast',
+      prompt: prompt,
+      hasImage: !!imageurl,
+      response: formattedResponse
+    });
+
+  } catch (error) {
+    console.error('Error processing Grok 4.1 Fast request:', error.response?.data || error.message);
     res.status(500).json({
       error: 'Internal server error',
       message: error.response?.data?.error?.message || error.message,
